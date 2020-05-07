@@ -624,9 +624,33 @@
              [name-item {:name name :hide-chevron? true :action action}]]
             [radio/radio (= name preferred-name)]]]))]]]])
 
-(defn- registered [names {:keys [preferred-name public-key] :as account} _]
+(views/defview in-progress-registrations [registrations address]
+  [react/view {:style {:margin-top 8}}
+   (for [[hash {:keys [state username custom-domain?]}] registrations]
+     (when-not (= state :dismissed)
+       ^{:key hash}
+       [list-item/list-item
+        {:title    (let [progress-msg (str username (i18n/label :t/ens-registration-in-progress))]
+                     (case state
+                       :submitted progress-msg
+                       :success (str username (i18n/label :t/ens-registration-complete))
+                       :failure (str username (i18n/label :t/ens-registration-failure))
+                       progress-msg))
+         :subtitle (i18n/label :t/ens-dismiss-message)
+         :on-press #(re-frame/dispatch (if (= state :submitted)
+                                         [:update-ens-tx-state :dismissed username custom-domain? hash]
+                                         [:clear-ens-registration hash]))
+         :icon     (case state
+                     :submitted :main-icons/change
+                     :success :main-icons/check
+                     :failure :main-icons/close
+                     :main-icons/change)}]))])
+
+(views/defview registered [names {:keys [preferred-name public-key name] :as account} _ registrations address]
   [react/view {:style {:flex 1}}
    [react/scroll-view
+    (when registrations
+      [in-progress-registrations registrations address])
     [react/view {:style {:margin-top 8}}
      [list-item/list-item
       {:title    (i18n/label :t/ens-add-username)
@@ -641,7 +665,8 @@
         (for [name names]
           ^{:key name}
           [name-item {:name name :action #(re-frame/dispatch [::ens/navigate-to-name name])}])]
-       [react/text {:style {:color colors/gray :font-size 15}}
+       [react/text {:style {:color colors/gray :font-size 15
+                            :margin-horizontal 16}}
         (i18n/label :t/ens-no-usernames)])]
     [react/view {:style {:padding-vertical 22 :border-color colors/gray-lighter :border-top-width 1}}
      (when (> (count names) 1)
@@ -670,9 +695,10 @@
         [message/text-message message]]])]])
 
 (views/defview main []
-  (views/letsubs [{:keys [names multiaccount show?]} [:ens.main/screen]]
+  (views/letsubs [{:keys [names multiaccount show? registrations]} [:ens.main/screen]
+                  {:keys [address]} [:multiaccount/current-account]]
     [react/keyboard-avoiding-view {:style {:flex 1}}
      [topbar/topbar {:title :t/ens-usernames}]
-     (if (seq names)
-       [registered names multiaccount show?]
+     (if (or (seq names) registrations)
+       [registered names multiaccount show? registrations address]
        [welcome])]))
