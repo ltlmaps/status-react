@@ -13,7 +13,8 @@
             [status-im.utils.contenthash :as contenthash]
             [status-im.utils.http :as http]
             [status-im.utils.platform :as platform]
-            [status-im.utils.security :as security])
+            [status-im.utils.security :as security]
+            [reagent.core :as reagent])
   (:require-macros [status-im.utils.views :refer [defview letsubs]]))
 
 (defview mention-element [from]
@@ -37,7 +38,7 @@
    appender])
 
 (defview quoted-message
-  [_ {:keys [from text]} outgoing current-public-key]
+  [_ {:keys [from text image]} outgoing current-public-key]
   (letsubs [{:keys [ens-name alias]} [:contacts/contact-name-by-identity from]]
     [react/view {:style (style/quoted-message-container outgoing)}
      [react/view {:style style/quoted-message-author-container}
@@ -47,10 +48,15 @@
        ens-name
        current-public-key
        (partial style/quoted-message-author outgoing)]]
-
-     [react/text {:style           (style/quoted-message-text outgoing)
-                  :number-of-lines 5}
-      text]]))
+     (if image
+       [react/image {:style  {:width            56
+                              :height           56
+                              :background-color :black
+                              :border-radius    4}
+                     :source {:uri image}}]
+       [react/text {:style           (style/quoted-message-text outgoing)
+                    :number-of-lines 5}
+        text])]))
 
 (defn render-inline [message-text outgoing content-type acc {:keys [type literal destination]}]
   (case type
@@ -229,6 +235,8 @@
     {:on-press      (fn [_]
                       (when (and (= content-type constants/content-type-sticker) pack)
                         (re-frame/dispatch [:stickers/open-sticker-pack pack]))
+                      (when (and (= content-type constants/content-type-image) (:image content))
+                        (re-frame/dispatch [:navigate-to :image-preview message]))
                       (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
                       (react/dismiss-keyboard!))
      :on-long-press #(cond (or (= content-type constants/content-type-text)
@@ -236,6 +244,10 @@
                            (re-frame/dispatch [:bottom-sheet/show-sheet
                                                {:content (sheets/message-long-press message)
                                                 :height  192}])
+                           (= content-type constants/content-type-image)
+                           (re-frame/dispatch [:bottom-sheet/show-sheet
+                                               {:content (sheets/image-long-press message false)
+                                                :height  160}])
                            (and (= content-type constants/content-type-sticker)
                                 from (not outgoing))
                            (re-frame/dispatch [:bottom-sheet/show-sheet
@@ -276,6 +288,20 @@
    [react/view (style/system-message-body message)
     [react/view child]]])
 
+(defn message-content-image [{:keys [content outgoing]}]
+  (let [dimensions (reagent/atom [260 260])
+        uri (:image content)]
+    (react/image-get-size
+     uri
+     (fn [width height]
+       (let [k (/ (max width height) 260)]
+         (reset! dimensions [(/ width k) (/ height k)]))))
+    (fn []
+      [react/view {:style (style/image-content outgoing)}
+       [react/image {:style {:width (first @dimensions) :height (last @dimensions)}
+                     :resize-mode :contain
+                     :source {:uri uri}}]])))
+
 (defn chat-message [{:keys [content content-type] :as message}]
   (if (= content-type constants/content-type-command)
     [message.command/command-content message-content-wrapper message]
@@ -296,6 +322,5 @@
                               ;;TODO (perf) move to event
                               :source {:uri (contenthash/url (-> content :sticker :hash))}}]
                 (if (= content-type constants/content-type-image)
-                  [react/image {:style {:margin-vertical 10 :width 140 :height 140 :border-radius 8}
-                                :source {:uri (:image content)}}]
+                  [message-content-image message]
                   [unknown-content-type message])))))]])))
