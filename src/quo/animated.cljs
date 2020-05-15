@@ -119,7 +119,10 @@
   (.withTimingTransition ^js redash val (clj->js config)))
 
 (defn re-timing [config]
-  (ocall redash "timing" (clj->js config)))
+  (.timing ^js redash (clj->js config)))
+
+(defn re-spring [config]
+  (.spring ^js redash (clj->js config)))
 
 (defn on-scroll [opts]
   (ocall redash "onScrollEvent" (clj->js opts)))

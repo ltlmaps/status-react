@@ -18,6 +18,8 @@
 (def touchable-without-feedback (reagent/adapt-react-class (.-TouchableWithoutFeedback ^js rn)))
 (def text-input (reagent/adapt-react-class  (.-TextInput ^js rn)))
 
+(def keyboard-avoiding-view (reagent/adapt-react-class (.-KeyboardAvoidingView ^js rn)))
+
 (def ui-manager  (.-UIManager ^js rn))
 
 (def layout-animation (.-LayoutAnimation ^js rn))
@@ -53,3 +55,7 @@
 
 (defn flat-list [props]
   [rn-flat-list (base-list-props props)])
+
+;; NOTE(Ferossgp): Temporary till hooks are available in reagent
+(defn window-height []
+  (-> ^js rn .-Dimensions (.get "window") .-height))

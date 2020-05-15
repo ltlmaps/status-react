@@ -25,11 +25,12 @@
                                              :back-button-cancel true})
         visible               (reagent/atom false)
         default-sheet-content (fn []
-                                [rn/view {:style {:height          300
+                                [rn/view {:style {:height          100
                                                   :justify-content :center
                                                   :align-items     :center}}
                                  [rn/touchable-opacity {:on-press #(reset! visible false)}
                                   [quo/text {:color :link} "Close"]]
+                                 [rn/text-input {:default-value "Hello world"}]
                                  [quo/text "Hello world!"]])]
     (fn []
       [rn/view {:margin-bottom 50
@@ -43,7 +44,8 @@
                             :padding-vertical   8
                             :border-radius      4
                             :background-color   (:interactive-01 @colors/theme)}}
-           [quo/text {:color :secondary-inverse} "Open sheet"]]]]
+           [quo/text {:color :secondary-inverse}
+            (str "Open sheet" @visible)]]]]
         [quo/bottom-sheet (merge @state
                                  {:visible?  @visible
                                   :on-cancel #(reset! visible false)

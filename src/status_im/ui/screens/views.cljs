@@ -25,6 +25,7 @@
             [status-im.ui.components.colors :as colors]
             [status-im.hardwallet.test-menu :as hardwallet.test-menu]
             [status-im.utils.config :as config]
+            [quo.previews.main :as quo]
             [status-im.reloader :as reloader]))
 
 (defview bottom-sheet []
@@ -93,7 +94,7 @@
 
 (defn main []
   (reagent/create-class
-   {:component-did-mount utils.universal-links/initialize
+   {:component-did-mount    utils.universal-links/initialize
     :component-will-unmount utils.universal-links/finalize
     :reagent-render
     (fn []
@@ -101,15 +102,16 @@
        ^{:key (str @colors/theme @reloader/cnt)}
        [react/view {:flex             1
                     :background-color colors/black-persist}
-        [navigation/navigation-container
-         (merge {:ref               (fn [r]
-                                      (navigation/set-navigator-ref r))
-                 :onStateChange     on-state-change
-                 :enableURLHandling false}
-                (when debug?
-                  {:enableURLHandling true
-                   :initialState      @state}))
-         [main-app-navigator]]
+        ;; [navigation/navigation-container
+        ;;  (merge {:ref               (fn [r]
+        ;;                               (navigation/set-navigator-ref r))
+        ;;          :onStateChange     on-state-change
+        ;;          :enableURLHandling false}
+        ;;         (when debug?
+        ;;           {:enableURLHandling true
+        ;;            :initialState      @state}))
+        ;;  [main-app-navigator]]
+        [quo/preview-screens]
         [wallet/prepare-transaction]
         [wallet/request-transaction]
         [wallet/select-account]
