@@ -33,6 +33,8 @@ stdenv.mkDerivation {
     };
   buildInputs = with pkgs; [ clojure nodejs bash git openjdk];
 
+  NIX_DEBUG = 1;
+
   phases = [ "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "installPhase" ];
   # Patching shadow-cljs.edn so it uses the local maven repo of dependencies provided by Nix
   patchPhase =
