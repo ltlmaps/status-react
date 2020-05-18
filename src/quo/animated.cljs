@@ -3,12 +3,25 @@
   (:require [reagent.core :as reagent]
             [oops.core :refer [oget ocall]]
             ["react-native-reanimated" :default animated :refer (clockRunning Easing)]
-            ["react-native-redash" :as redash]))
+            ["react-native-redash" :as redash]
+            quo.react)
+  (:require-macros [quo.react :refer [maybe-js-deps]]))
 
 (def view (reagent/adapt-react-class (.-View animated)))
 (def text (reagent/adapt-react-class (.-Text animated)))
 (def scroll-view (reagent/adapt-react-class (.-ScrollView animated)))
 (def code (reagent/adapt-react-class (.-Code animated)))
+
+(def useCode (.-useCode animated))
+
+(defn code!
+  ([setup-fn]
+   (useCode
+    (fn [] (setup-fn))))
+  ([setup-fn deps]
+   (useCode
+    (fn [] (setup-fn))
+    (maybe-js-deps deps))))
 
 (def eq (oget animated "eq"))
 (def neq (oget animated "neq"))

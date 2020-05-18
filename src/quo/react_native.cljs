@@ -59,3 +59,12 @@
 ;; NOTE(Ferossgp): Temporary till hooks are available in reagent
 (defn window-height []
   (-> ^js rn .-Dimensions (.get "window") .-height))
+
+;; Hooks
+
+(defn use-window-dimensions []
+  (let [window (rn/useWindowDimensions)]
+    {:font-scale (.-fontScale window)
+     :height     (.-height ^js window)
+     :scale      (.-scale ^js window)
+     :width      (.-window ^js window)}))
