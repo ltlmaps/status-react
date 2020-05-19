@@ -6,8 +6,7 @@
    [status-im.i18n :as i18n]
    [status-im.ui.components.colors :as colors]
    [status-im.ui.components.icons.vector-icons :as vector-icons]
-   [status-im.ui.components.styles :as components.styles]
-   [status-im.ui.components.common.common :as components.common]
+   [status-im.ui.components.toolbar :as toolbar]
    [status-im.ui.components.text-input.view :as text-input]
    [status-im.ui.screens.offline-messaging-settings.edit-mailserver.styles :as styles]
    [status-im.ui.components.tooltip.views :as tooltip]
@@ -49,43 +48,40 @@
                             (not (string/blank? name))
                             (empty? validation-errors))
           invalid-url? (contains? validation-errors :url)]
-      [react/view components.styles/flex
-       [react/keyboard-avoiding-view components.styles/flex
-        [topbar/topbar {:title (if id :t/mailserver-details :t/add-mailserver)}]
-        [react/scroll-view {:keyboard-should-persist-taps :handled}
-         [react/view styles/edit-mailserver-view
+      [react/keyboard-avoiding-view {:style {:flex 1}}
+       [topbar/topbar {:title (if id :t/mailserver-details :t/add-mailserver)}]
+       [react/scroll-view {:keyboard-should-persist-taps :handled}
+        [react/view styles/edit-mailserver-view
+         [text-input/text-input-with-label
+          {:label          (i18n/label :t/name)
+           :placeholder    (i18n/label :t/specify-name)
+           :container      styles/input-container
+           :default-value  name
+           :on-change-text #(re-frame/dispatch [:mailserver.ui/input-changed :name %])
+           :auto-focus     true}]
+         [react/view
+          {:flex 1}
           [text-input/text-input-with-label
-           {:label           (i18n/label :t/name)
-            :placeholder     (i18n/label :t/specify-name)
-            :container       styles/input-container
-            :default-value   name
-            :on-change-text  #(re-frame/dispatch [:mailserver.ui/input-changed :name %])
-            :auto-focus      true}]
-          [react/view
-           {:flex 1}
-           [text-input/text-input-with-label
-            {:label          (i18n/label :t/mailserver-address)
-             :placeholder    (i18n/label :t/mailserver-format)
-             :content        qr-code
-             :container      styles/input-container
-             :default-value  url
-             :on-change-text #(re-frame/dispatch [:mailserver.ui/input-changed :url %])}]
-           (when (and (not (string/blank? url))
-                      invalid-url?)
-             [tooltip/tooltip (i18n/label :t/invalid-format
-                                          {:format (i18n/label :t/mailserver-format)})
-              {:color        colors/red-light
-               :font-size    12
-               :bottom-value 25}])]
-          (when (and id
-                     (not connected?))
-            [react/view
-             [connect-button id]
-             [delete-button id]])]]
-        [react/view styles/bottom-container
-         [react/view components.styles/flex]
-         [components.common/bottom-button
-          {:forward?  true
-           :label     (i18n/label :t/save)
-           :disabled? (not is-valid?)
-           :on-press  #(re-frame/dispatch [:mailserver.ui/save-pressed])}]]]])))
+           {:label          (i18n/label :t/mailserver-address)
+            :placeholder    (i18n/label :t/mailserver-format)
+            :content        qr-code
+            :container      styles/input-container
+            :default-value  url
+            :on-change-text #(re-frame/dispatch [:mailserver.ui/input-changed :url %])}]
+          (when (and (not (string/blank? url))
+                     invalid-url?)
+            [tooltip/tooltip (i18n/label :t/invalid-format
+                                         {:format (i18n/label :t/mailserver-format)})
+             {:color        colors/red-light
+              :font-size    12
+              :bottom-value 25}])]
+         (when (and id
+                    (not connected?))
+           [react/view
+            [connect-button id]
+            [delete-button id]])]]
+       [toolbar/toolbar
+        {:right {:type      :next
+                 :label     :t/save
+                 :disabled? (not is-valid?)
+                 :on-press  #(re-frame/dispatch [:mailserver.ui/save-pressed])}}]])))
