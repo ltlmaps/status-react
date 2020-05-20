@@ -250,7 +250,7 @@
                      (cond
                        (= transaction-success true)
                        (fx/merge cofx
-                         (status-im.ens.core/update-ens-tx-state :success username custom-domain? hash)
+                         (status-im.ens.core/clear-ens-registration hash)
                          (status-im.ens.core/save-username custom-domain? username))
                        (= type :failed)
                        (status-im.ens.core/update-ens-tx-state :failure username custom-domain? hash)

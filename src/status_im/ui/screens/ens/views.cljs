@@ -594,12 +594,14 @@
       [button {:on-press #(re-frame/dispatch [::ens/get-started-pressed])
                :label    (i18n/label :t/get-started)}]]]))
 
-(defn- name-item [{:keys [name action]}]
+(defn- name-item [{:keys [name action subtitle]}]
   (let [stateofus-username (stateofus/username name)
         s                  (or stateofus-username name)]
     [list-item/list-item
      {:title       s
-      :subtitle    (when stateofus-username stateofus/domain)
+      :subtitle    (if subtitle
+                     subtitle
+                     (when stateofus-username stateofus/domain))
       :on-press    action
       :icon        :main-icons/username}]))
 
@@ -624,33 +626,22 @@
              [name-item {:name name :hide-chevron? true :action action}]]
             [radio/radio (= name preferred-name)]]]))]]]])
 
-(views/defview in-progress-registrations [registrations address]
+(views/defview in-progress-registrations [registrations]
   [react/view {:style {:margin-top 8}}
-   (for [[hash {:keys [state username custom-domain?]}] registrations]
-     (when-not (= state :dismissed)
+   (for [[hash {:keys [state username]}] registrations]
+     (when-not (or (= state :dismissed) (= state :success))
        ^{:key hash}
-       [list-item/list-item
-        {:title    (let [progress-msg (str username (i18n/label :t/ens-registration-in-progress))]
-                     (case state
-                       :submitted progress-msg
-                       :success (str username (i18n/label :t/ens-registration-complete))
-                       :failure (str username (i18n/label :t/ens-registration-failure))
-                       progress-msg))
-         :subtitle (i18n/label :t/ens-dismiss-message)
-         :on-press #(re-frame/dispatch (if (= state :submitted)
-                                         [:update-ens-tx-state :dismissed username custom-domain? hash]
-                                         [:clear-ens-registration hash]))
-         :icon     (case state
-                     :submitted :main-icons/change
-                     :success :main-icons/check
-                     :failure :main-icons/close
-                     :main-icons/change)}]))])
+       [name-item {:name username
+                   :action (when-not (= state :submitted)
+                             #(re-frame/dispatch [:clear-ens-registration hash]))
+                   :subtitle (case state
+                                   :submitted (i18n/label :t/ens-registration-in-progress)
+                                   :failure (i18n/label :t/ens-registration-failure)
+                                   nil)}]))])
 
-(views/defview registered [names {:keys [preferred-name public-key name] :as account} _ registrations address]
+(views/defview registered [names {:keys [preferred-name public-key] :as account} _ registrations]
   [react/view {:style {:flex 1}}
    [react/scroll-view
-    (when registrations
-      [in-progress-registrations registrations address])
     [react/view {:style {:margin-top 8}}
      [list-item/list-item
       {:title    (i18n/label :t/ens-add-username)
@@ -660,6 +651,8 @@
     [react/view {:style {:margin-top 22 :margin-bottom 8}}
      [react/text {:style {:color colors/gray :margin-horizontal 16}}
       (i18n/label :t/ens-your-usernames)]
+     (when registrations
+           [in-progress-registrations registrations])
      (if (seq names)
        [react/view {:style {:margin-top 8}}
         (for [name names]
@@ -695,10 +688,9 @@
         [message/text-message message]]])]])
 
 (views/defview main []
-  (views/letsubs [{:keys [names multiaccount show? registrations]} [:ens.main/screen]
-                  {:keys [address]} [:multiaccount/current-account]]
+  (views/letsubs [{:keys [names multiaccount show? registrations]} [:ens.main/screen]]
     [react/keyboard-avoiding-view {:style {:flex 1}}
      [topbar/topbar {:title :t/ens-usernames}]
      (if (or (seq names) registrations)
-       [registered names multiaccount show? registrations address]
+       [registered names multiaccount show? registrations]
        [welcome])]))

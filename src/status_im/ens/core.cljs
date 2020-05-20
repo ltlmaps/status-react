@@ -2,7 +2,6 @@
   (:refer-clojure :exclude [name])
   (:require [clojure.string :as string]
             [re-frame.core :as re-frame]
-            [status-im.utils.handlers :as handlers]
             [status-im.ethereum.abi-spec :as abi-spec]
             [status-im.ethereum.contracts :as contracts]
             [status-im.ethereum.core :as ethereum]
@@ -17,7 +16,6 @@
             [status-im.utils.fx :as fx]
             [status-im.utils.money :as money]
             [status-im.utils.random :as random]))
-            [status-im.utils.types]
 
 (defn fullname [custom-domain? username]
   (if custom-domain?
