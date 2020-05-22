@@ -628,8 +628,8 @@
 
 (views/defview in-progress-registrations [registrations]
   [react/view {:style {:margin-top 8}}
-   (for [[hash {:keys [state username]}] registrations]
-     (when-not (or (= state :dismissed) (= state :success))
+   (for [[hash {:keys [state username]}] registrations
+     :when (or (= state :submitted) (= state :failure))]
        ^{:key hash}
        [name-item {:name username
                    :action (when-not (= state :submitted)
@@ -637,7 +637,7 @@
                    :subtitle (case state
                                    :submitted (i18n/label :t/ens-registration-in-progress)
                                    :failure (i18n/label :t/ens-registration-failure)
-                                   nil)}]))])
+                                   nil)}])])
 
 (views/defview registered [names {:keys [preferred-name public-key] :as account} _ registrations]
   [react/view {:style {:flex 1}}

@@ -206,7 +206,7 @@
   [{:keys [db]} address]
   {:db (assoc-in db [:wallet :fetching address :all-fetched?] true)})
 
-(fx/defn handle-mew-transfer
+(fx/defn handle-new-transfer
   [{:keys [db] :as cofx} transfers {:keys [address limit]}]
   (log/debug "[transfers] new-transfers"
              "address" address
@@ -250,10 +250,10 @@
                      (cond
                        (= transaction-success true)
                        (fx/merge cofx
-                         (status-im.ens.core/clear-ens-registration hash)
-                         (status-im.ens.core/save-username custom-domain? username))
+                         (ens/clear-ens-registration hash)
+                         (ens/save-username custom-domain? username))
                        (= type :failed)
-                       (status-im.ens.core/update-ens-tx-state :failure username custom-domain? hash)
+                       (ens/update-ens-tx-state :failure username custom-domain? hash)
                        :else
                        nil)))
               registrations)
@@ -264,7 +264,7 @@
   {:events [::new-transfers]}
   [cofx transfers params]
   (fx/merge cofx
-            (handle-mew-transfer transfers params)
+            (handle-new-transfer transfers params)
             (check-ens-transactions transfers)))
 
 (fx/defn tx-fetching-failed

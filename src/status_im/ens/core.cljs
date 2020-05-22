@@ -31,9 +31,10 @@
 
 (fx/defn update-ens-tx-state-and-redirect
   {:events [:update-ens-tx-state-and-redirect]}
-  [_ new-state username custom-domain? tx-hash]
-  {:dispatch-n [[:update-ens-tx-state new-state username custom-domain? tx-hash]
-                [::redirect-to-ens-summary]]})
+  [cofx new-state username custom-domain? tx-hash]
+         (fx/merge cofx
+           (update-ens-tx-state new-state username custom-domain? tx-hash)
+           (redirect-to-ens-summary)))
 
 (fx/defn clear-ens-registration
   {:events [:clear-ens-registration]}
