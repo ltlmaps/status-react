@@ -96,6 +96,8 @@
          [react/text {:style           styles/create-pin-text
                       :number-of-lines 2}
           (i18n/label description-label)])
+       (when save-password-checkbox?
+         [save-password])
        [react/view {:flex 1}
         (case status
           :verifying [react/view styles/waiting-indicator-container
@@ -108,8 +110,7 @@
             [react/view {:margin-top (if (= step :puk) 24 8)}
              [react/text {:style {:text-align :center}}
               (i18n/label :t/pin-retries-left {:number retry-counter})]]))]
-       (when save-password-checkbox?
-         [save-password])
+
        (if (= step :puk)
          [puk-indicators pin status]
          [pin-indicators pin status nil])
