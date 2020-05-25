@@ -25,11 +25,11 @@
    :background-color (:backdrop @colors/theme)})
 
 (defn content-container
-  [window-height content-height]
+  [window-height]
   {:background-color        (:ui-background @colors/theme)
    :border-top-left-radius  border-radius
    :border-top-right-radius border-radius
-   :height                  (+ content-height window-height)})
+   :height                  (* window-height 2)})
 
 (def content-header
   {:height          border-radius

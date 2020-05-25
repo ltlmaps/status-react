@@ -3,12 +3,14 @@
             [quo.animated :as animated]
             [quo.react-native :as rn]
             [quo.react :as react]
+            ["react" :as react-js]
             [quo.platform :as platform]
+            [cljs-bean.core :as bean]
             [quo.components.safe-area :as safe-area]
             [quo.components.bottom-sheet.style :as styles]
             [quo.gesture-handler :as gesture-handler]))
 
-(def opacity-coeff 0.4)
+(def opacity-range 100)
 
 (def spring-config {:damping                   15
                     :mass                      1
@@ -17,154 +19,163 @@
                     :restSpeedThreshold        0.1
                     :restDisplacementThreshold 0.1})
 
-(defn bottom-sheet-still-no-hooks []
-  (let [content-height   (reagent/atom 0)
-        external-visible (reagent/atom nil)
-        visible          (reagent/atom nil)
+(defn hack-children [^js children]
+  (->> children
+       (react-js/Children.toArray)
+       (into [])))
 
-        header-translation-y (animated/value 0)
-        header-velocity-y    (animated/value (:undetermined gesture-handler/states))
-        header-state         (animated/value (:undetermined gesture-handler/states))
+(defn bottom-sheet-raw [props]
+  (let [{on-cancel          :onCancel
+         disable-drag?      :disableDrag?
+         show-handle?       :showHandle?
+         visible?           :visible?
+         backdrop-dismiss?  :backdropDismiss?
+         back-button-cancel :backButtonCancel
+         children           :children
+         :or                {show-handle?       true
+                             backdrop-dismiss?  true
+                             back-button-cancel true}}
+        (bean/bean props)
 
-        resistance (animated/divide header-translation-y 2)
+        {window-height :height} (rn/use-window-dimensions)
+        safe-area               (safe-area/use-safe-area)
+
+        visible  (react/state false)
+        on-close (fn []
+                   (when @visible
+                     (reset! visible false)
+                     (when on-cancel (on-cancel))))
+
+        content-height       (animated/value 0)
+        master-translation-y (animated/value 0)
+        master-velocity-y    (animated/value (:undetermined gesture-handler/states))
+        master-state         (animated/value (:undetermined gesture-handler/states))
+
+        resistance (animated/divide master-translation-y 2)
 
         open       (animated/value 0)
         close      (animated/value 0)
         offset     (animated/value 0)
         clock      (animated/clock)
         body-ref   (react/create-ref)
-        header-ref (react/create-ref)
+        master-ref (react/create-ref)
 
-        on-header-event (animated/event [{:nativeEvent
-                                          {:translationY header-translation-y
-                                           :state        header-state
-                                           :velocityY    header-velocity-y}}]
-                                        {:useNativeDriver true})
+        on-master-event (animated/event [{:nativeEvent
+                                          {:translationY master-translation-y
+                                           :state        master-state
+                                           :velocityY    master-velocity-y}}])
         on-body-event   (animated/event [{:nativeEvent
-                                          {:translationY header-translation-y
-                                           :state        header-state
-                                           :velocityY    header-velocity-y}}])
-        on-layout       (fn [evt]
-                          (let [height (->> ^js evt
-                                            .-nativeEvent
-                                            .-layout
-                                            .-height)]
-                            (when (not= height @content-height)
-                              (reset! content-height height))))
-        close-sheet     (fn []
-                          (animated/set-value close 1))
-        memo-spring     (memoize
-                         #(animated/with-spring
-                            (merge {:value    resistance
-                                    :velocity header-velocity-y
-                                    :offset   offset
-                                    :state    header-state
-                                    :config   spring-config} %)))]
-    ;; TODO(Ferossgp): Use hook to get safe-area and window size when available
-    (fn [{:keys [content on-cancel disable-drag? show-handle? visible?
-                backdrop-dismiss? safe-area window-height back-button-cancel]
-         :or   {show-handle?       true
-                backdrop-dismiss?  true
-                back-button-cancel true
-                window-height      800}}]
-      (when-not (= @external-visible visible?)
-        (reset! external-visible visible?)
-        (if visible?
-          (reset! visible true)
-          (close-sheet)))
-      (let [height           (+ @content-height
-                                styles/border-radius)
-            max-height       (- window-height
-                                (:top safe-area)
-                                styles/margin-top)
-            sheet-height     (min max-height height)
-            open-snap-point  (- sheet-height)
-            close-snap-point 0
-            on-close         (fn []
-                               (reset! visible false)
-                               (when on-cancel (on-cancel)))
-            on-snap          (fn [pos]
-                               (when (= (aget pos 0) close-snap-point)
-                                 (on-close)))
-            translate-y      (memo-spring {:snapPoints [open-snap-point close-snap-point]
-                                           :onSnap     on-snap})
-            opacity          (animated/interpolate translate-y
-                                                   {:inputRange  [(* open-snap-point opacity-coeff) close-snap-point]
-                                                    :outputRange [1 0]
-                                                    :extrapolate (:clamp animated/extrapolate)})]
-        [:<>
-         ;; Animate open and close
-         [animated/code
-          {:key  (str open-snap-point on-cancel) ; TODO(Ferossgp): Replace with a hook
-           :exec (animated/block
-                  [(animated/cond*
-                    open
-                    [(animated/set offset
-                                   (animated/re-timing {:from   offset
-                                                        :to     open-snap-point
-                                                        :clock  clock
-                                                        :duration 250
-                                                        ;; :config spring-config
-                                                        }))
-                     (animated/cond* (animated/not* (animated/clock-running clock))
-                                     (animated/set open 0))])
-                   (animated/cond*
-                    close
-                    [(animated/set offset
-                                   (animated/re-timing {:from     offset
-                                                        :to       close-snap-point
-                                                        :clock    clock
-                                                        :duration 150
-                                                        :easing   (:ease-out animated/easings)}))
-                     (animated/cond* (animated/not* (animated/clock-running clock))
-                                     [(animated/set close 0)
-                                      (animated/call* [] on-close)])])])}]
-         [rn/modal {:visible                @visible
-                    :transparent            true
-                    :status-bar-translucent true
-                    :presentation-style     :overFullScreen
-                    :hardware-accelerated   true
-                    :on-show                #(do
-                                               (animated/set-value open 1))
-                    :on-request-close       (fn []
-                                              (when back-button-cancel
-                                                (close-sheet)))}
-          [rn/view {:style          styles/container
-                    :pointer-events :box-none}
-           [rn/touchable-without-feedback (merge {:style styles/container}
-                                                 (when backdrop-dismiss?
-                                                   {:on-press close-sheet}))
-            [animated/view {:style (merge (styles/backdrop)
-                                          {:opacity opacity})}]]
-           [animated/view {:style (merge (styles/content-container window-height sheet-height)
-                                         {:transform [{:translateY translate-y}
-                                                      {:translateY (animated/add sheet-height window-height)}]})}
-            [gesture-handler/pan-gesture-handler {:ref                  header-ref
-                                                  :wait-for             body-ref
-                                                  :enabled              (not disable-drag?)
-                                                  :onGestureEvent       on-header-event
-                                                  :onHandlerStateChange on-header-event}
-             [animated/view  {:style styles/content-header}
-              (when show-handle?
-                [rn/view {:style styles/handle}])]]
-            [gesture-handler/pan-gesture-handler {:ref                  body-ref
-                                                  :wait-for             header-ref
-                                                  :enabled              (and (not disable-drag?)
-                                                                             (not= max-height sheet-height))
-                                                  :onGestureEvent       on-body-event
-                                                  :onHandlerStateChange on-body-event}
-             ;; NOTE(Ferossgp): Use different drag event instead of scroll-view
-             [animated/scroll-view {:bounces        false
-                                    :style          {:flex 1}
-                                    :scroll-enabled (= max-height sheet-height)}
-              [animated/view {:style     {:padding-top    styles/vertical-padding
-                                          :padding-bottom (+ styles/vertical-padding
-                                                             (:bottom safe-area))}
-                              :on-layout on-layout}
-               [content]]]]]]]]))))
+                                          {:translationY master-translation-y
+                                           :state        master-state
+                                           :velocityY    master-velocity-y}}])
 
-(defn bottom-sheet [props]
-  [bottom-sheet-still-no-hooks (assoc props
-                                      :window-height (rn/window-height)
-                                      :safe-area {:top    44
-                                                  :bottom 34})])
+        max-height       (- window-height (:top safe-area) styles/margin-top)
+        sheet-height     (animated/min* max-height content-height)
+        open-snap-point  (animated/multiply -1 sheet-height)
+        close-snap-point 0
+        close-sheet      (fn []
+                           (js/requestAnimationFrame
+                            #(animated/set-value close 1)))
+        on-snap          (fn [pos]
+                           (when (= (aget pos 0) close-snap-point)
+                             (animated/set-value offset close-snap-point)
+                             (on-close)))
+        translate-y      (animated/with-spring
+                           {:value      resistance
+                            :velocity   master-velocity-y
+                            :offset     offset
+                            :state      master-state
+                            :config     spring-config
+                            :onSnap     on-snap
+                            :snapPoints [open-snap-point close-snap-point]})
+        opacity          (animated/interpolate translate-y
+                                               {:inputRange  [(- opacity-range) 0]
+                                                :outputRange [1 0]
+                                                :extrapolate (:clamp animated/extrapolate)})
+        on-layout        (fn [evt]
+                           (let [height (->> ^js evt
+                                             .-nativeEvent
+                                             .-layout
+                                             .-height
+                                             (+ styles/border-radius))]
+                             (js/requestAnimationFrame
+                              #(animated/set-value content-height height))))]
+    (react/effect!
+     (fn []
+       (cond
+         visible?
+         (reset! visible visible?)
+
+         @visible
+         (close-sheet)))
+     [visible?])
+    (animated/code!
+     (fn []
+       (animated/block
+        [(animated/cond*
+          open
+          [(animated/set offset
+                         (animated/re-spring {:from   offset
+                                              :to     open-snap-point
+                                              :clock  clock
+                                              :config spring-config}))
+           (animated/cond* (animated/not* (animated/clock-running clock))
+                           (animated/set open 0))])
+         (animated/cond*
+          close
+          [(animated/set offset
+                         (animated/re-timing {:from     offset
+                                              :to       close-snap-point
+                                              :clock    clock
+                                              :duration 150}))
+           (animated/cond* (animated/not* (animated/clock-running clock))
+                           [(animated/call* [] on-close)
+                            (animated/set close 0)])])])))
+    (reagent/as-element
+     [:<>
+      [rn/modal {:visible                @visible
+                 :transparent            true
+                 :status-bar-translucent true
+                 :presentation-style     :overFullScreen
+                 :hardware-accelerated   true
+                 :on-show                (fn []
+                                           (js/requestAnimationFrame
+                                            #(animated/set-value open 1)))
+                 :on-request-close       (fn []
+                                           (when back-button-cancel
+                                             (close-sheet)))}
+       [rn/view {:style          styles/container
+                 :pointer-events :box-none}
+        [rn/touchable-without-feedback (merge {:style styles/container}
+                                              (when backdrop-dismiss?
+                                                {:on-press close-sheet}))
+         [animated/view {:style (merge (styles/backdrop)
+                                       {:opacity opacity})}]]
+        [animated/view {:style (merge (styles/content-container window-height)
+                                      {:transform [{:translateY translate-y}
+                                                   {:translateY (* window-height 2)}]})}
+         [gesture-handler/pan-gesture-handler {:ref                  master-ref
+                                               :wait-for             body-ref
+                                               :enabled              (not disable-drag?)
+                                               :onGestureEvent       on-master-event
+                                               :onHandlerStateChange on-master-event}
+          [animated/view  {:style styles/content-header}
+           (when show-handle?
+             [rn/view {:style styles/handle}])]]
+         [gesture-handler/pan-gesture-handler {:ref                  body-ref
+                                               :wait-for             master-ref
+                                               :enabled              (not disable-drag?)
+                                               :onGestureEvent       on-body-event
+                                               :onHandlerStateChange on-body-event}
+          [animated/view {:flex 1}
+           [animated/scroll-view {:bounces        false
+                                  :scroll-enabled true
+                                  :style          {:flex 1}}
+            [animated/view {:style     {:padding-top    styles/vertical-padding
+                                        :padding-bottom (+ styles/vertical-padding
+                                                           (:bottom safe-area))}
+                            :on-layout on-layout}
+             (into [:<>] (hack-children children))]]]]]]]])))
+
+(defn bottom-sheet [props & children]
+  (into [:> bottom-sheet-raw props] children))

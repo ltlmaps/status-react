@@ -27,11 +27,13 @@
 (def neq (oget animated "neq"))
 (def greater (oget animated "greaterThan"))
 (def greater-or-eq (oget animated "greaterOrEq"))
+(def less (oget animated "lessThan"))
 (def less-or-eq (oget animated "lessOrEq"))
 (def not* (oget animated "not"))
 (def or* (oget animated "or"))
 (def and* (oget animated "and"))
 
+(def diff (oget animated "diff"))
 (def add (oget animated "add"))
 (def sub (oget animated "sub"))
 (def multiply (oget animated "multiply"))
@@ -124,6 +126,15 @@
 
 (defn with-spring [config]
   (ocall redash "withSpring" (clj->js config)))
+
+(defn with-decay [config]
+  (.withDecay ^js redash (clj->js config)))
+
+(defn with-offset [config]
+  (.withOffset ^js redash (clj->js config)))
+
+(defn diff-clamp [node min max]
+  (.diffClamp ^js redash node min max))
 
 (defn with-spring-transition [val config]
   (.withSpringTransition ^js redash val (clj->js config)))
