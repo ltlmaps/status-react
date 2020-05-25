@@ -81,8 +81,7 @@
                      {:group-name chat-name})]))))
 
 (defn group-chat-description-container
-  [{:keys [chat-name
-           public?
+  [{:keys [public?
            chat-id
            loading-messages?
            no-messages?]}]

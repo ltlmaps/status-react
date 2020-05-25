@@ -98,31 +98,28 @@
 
 (defn chat-intro-header-container
   [{:keys [group-chat
-           chat-name
            might-have-join-time-messages?
-           name pending-invite-inviter-name color chat-id chat-name
-           public? contact intro-status] :as chat}
+           name color chat-id chat-name
+           public? contact]}
    no-messages]
-  (let [icon-text  (if public? chat-id name)
-        intro-name (if public? chat-name (multiaccounts/displayed-name contact))]
-    [react/touchable-without-feedback
-     {:style    {:flex        1
-                 :align-items :flex-start}
-      :on-press (fn [_]
-                  (re-frame/dispatch
-                   [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
-                  (react/dismiss-keyboard!))}
-     (let [opts
-           {:chat-id chat-id
-            :group-chat group-chat
-            :chat-name chat-name
-            :public? public?
-            :color color
-            :loading-messages? might-have-join-time-messages?
-            :no-messages? no-messages}]
-       (if group-chat
-         [chat-intro opts]
-         [chat-intro-one-to-one opts]))]))
+  [react/touchable-without-feedback
+   {:style    {:flex        1
+               :align-items :flex-start}
+    :on-press (fn [_]
+                (re-frame/dispatch
+                 [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
+                (react/dismiss-keyboard!))}
+   (let [opts
+         {:chat-id chat-id
+          :group-chat group-chat
+          :chat-name chat-name
+          :public? public?
+          :color color
+          :loading-messages? might-have-join-time-messages?
+          :no-messages? no-messages}]
+     (if group-chat
+       [chat-intro opts]
+       [chat-intro-one-to-one opts]))])
 
 (defonce messages-list-ref (atom nil))
 

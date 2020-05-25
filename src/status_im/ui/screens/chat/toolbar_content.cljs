@@ -5,17 +5,6 @@
             [status-im.ui.screens.chat.styles.main :as st])
   (:require-macros [status-im.utils.views :refer [defview letsubs]]))
 
-(defn- in-progress-text [{:keys [highestBlock currentBlock startBlock]}]
-  (let [total      (- highestBlock startBlock)
-        ready      (- currentBlock startBlock)
-        percentage (if (zero? ready)
-                     0
-                     (->> (/ ready total)
-                          (* 100)
-                          (.round js/Math)))]
-
-    (str (i18n/label :t/sync-in-progress) " " percentage "% " currentBlock)))
-
 (defn- group-last-activity [{:keys [contacts public?]}]
   [react/view {:flex-direction :row}
    [react/text {:style st/toolbar-subtitle}
@@ -51,6 +40,6 @@
        chat-name]
       (when contact
         [contact-indicator contact])
-      (if group-chat
+      (when group-chat
         [group-last-activity {:contacts   contacts
                               :public?    public?}])]]))

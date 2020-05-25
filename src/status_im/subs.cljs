@@ -37,7 +37,6 @@
             [status-im.utils.money :as money]
             [status-im.utils.platform :as platform]
             [status-im.utils.security :as security]
-            [status-im.utils.universal-links.core :as links]
             [status-im.wallet.db :as wallet.db]
             [status-im.wallet.utils :as wallet.utils]
             status-im.ui.screens.keycard.subs
@@ -636,9 +635,8 @@
  :chats/current-chat
  :<- [:chats/current-raw-chat]
  :<- [:multiaccount/public-key]
- :<- [:mailserver/ranges]
- (fn [[{:keys [group-chat chat-id messages] :as current-chat}
-       my-public-key ranges]]
+ (fn [[{:keys [group-chat] :as current-chat}
+       my-public-key]]
    (when current-chat
      (cond-> current-chat
        (chat.models/public-chat? current-chat)
