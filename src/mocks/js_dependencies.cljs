@@ -89,7 +89,7 @@
 (def net-info  #js {})
 (def touchid  #js {})
 (def safe-area-context (clj->js {:SafeAreaProvider {:_reactNativeIphoneXHelper {:getStatusBarHeight (fn [])}}
-                                 :SafeAreaInsetsContext {}
+                                 :SafeAreaInsetsContext {:Consumer (fn [])}
                                  :SafeAreaView {}}))
 (def react-native-dark-mode #js {"eventEmitter" {} "initialMode" {}})
 

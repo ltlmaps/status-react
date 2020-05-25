@@ -102,15 +102,16 @@
        ^{:key (str @colors/theme @reloader/cnt)}
        [react/view {:flex             1
                     :background-color colors/black-persist}
-        ;; [navigation/navigation-container
-        ;;  (merge {:ref               (fn [r]
-        ;;                               (navigation/set-navigator-ref r))
-        ;;          :onStateChange     on-state-change
-        ;;          :enableURLHandling false}
-        ;;         (when debug?
-        ;;           {:enableURLHandling true
-        ;;            :initialState      @state}))
-        ;;  [main-app-navigator]]
+        (comment
+          [navigation/navigation-container
+           (merge {:ref               (fn [r]
+                                        (navigation/set-navigator-ref r))
+                   :onStateChange     on-state-change
+                   :enableURLHandling false}
+                  (when debug?
+                    {:enableURLHandling true
+                     :initialState      @state}))
+           [main-app-navigator]])
         [quo/preview-screens]
         [wallet/prepare-transaction]
         [wallet/request-transaction]

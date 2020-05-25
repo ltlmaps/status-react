@@ -4,7 +4,6 @@
             [quo.react-native :as rn]
             [quo.react :as react]
             ["react" :as react-js]
-            [quo.platform :as platform]
             [cljs-bean.core :as bean]
             [quo.components.safe-area :as safe-area]
             [quo.components.bottom-sheet.style :as styles]
