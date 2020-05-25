@@ -401,7 +401,7 @@
                        (assoc-in [:hardwallet :application-info-error] nil))}
               (stash-on-card-read)
               (when (zero? pin-retry-counter)
-                frozen-keycard-popup)
+                (frozen-keycard-popup))
               (fn [cofx]
                 (if (zero? puk-retry-counter)
                   {:utils/show-popup {:title   (i18n/label :t/error)

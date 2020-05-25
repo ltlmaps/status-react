@@ -30,13 +30,11 @@
                 :margin-horizontal 24
                 :align-items       :center}
     [components.common/button
-     {:on-press     #(do
-                       (re-frame/dispatch [::login/reset-pin])
-                       (re-frame/dispatch [:hide-popover]))
+     {:on-press     #(re-frame/dispatch [::login/reset-pin])
       :button-style {:margin-top 24}
       :label        (i18n/label :t/keycard-is-frozen-reset)}]
     [components.common/button
-     {:on-press     #(re-frame/dispatch [:hide-popover])
+     {:on-press     #(re-frame/dispatch [::login/frozen-keycard-popover-dismissed])
       :button-style {:margin-top 24}
       :background?  false
       :label        (i18n/label :t/dismiss)}]]])

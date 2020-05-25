@@ -56,10 +56,24 @@
 (fx/defn reset-pin
   {:events [::reset-pin]}
   [{:keys [db] :as cofx}]
-  {:db (update-in db [:hardwallet :pin] assoc
-                  :enter-step :reset
-                  :error nil
-                  :status nil)})
+  {:db (-> db
+           (dissoc :popover/popover)
+           (update-in [:hardwallet :pin] dissoc
+                      :reset :puk)
+           (update-in [:hardwallet :pin] assoc
+                      :enter-step :reset
+                      :error nil
+                      :status nil))})
+
+(fx/defn dismiss-frozen-keycard-popover
+  {:events [::frozen-keycard-popover-dismissed]}
+  [{:keys [db] :as cofx}]
+  (fx/merge
+   cofx
+   {:db (-> db
+            (dissoc :popover/popover)
+            (update :hardwallet dissoc :setup-step))}
+   (navigation/navigate-back)))
 
 (fx/defn login-with-keycard
   {:events [:hardwallet/login-with-keycard]}
@@ -103,8 +117,7 @@
       (and (zero? pin-retry-counter)
            (or (nil? puk-retry-counter)
                (= 5 puk-retry-counter)))
-      nil
-      #_(frozen-keycard-popup cofx)
+      nil #_(frozen-keycard-popup cofx)
 
       :else
       (common/get-keys-from-keycard cofx))))

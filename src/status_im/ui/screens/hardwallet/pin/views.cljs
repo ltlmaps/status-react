@@ -1,5 +1,6 @@
 (ns status-im.ui.screens.hardwallet.pin.views
-  (:require-macros [status-im.utils.views :refer [defview letsubs]])
+  (:require-macros [status-im.utils.views :refer [defview letsubs]]
+                   [taoensso.timbre :as log])
   (:require [re-frame.core :as re-frame]
             [status-im.i18n :as i18n]
             [status-im.ui.components.colors :as colors]
@@ -43,29 +44,23 @@
 (defn pin-indicator [pressed? status]
   [react/view (styles/pin-indicator pressed? status)])
 
-(defn pin-indicators [pin status style]
+(defn pin-indicators [pin status group-size style]
   [react/view (merge styles/pin-indicator-container style)
    (map-indexed
-    (fn [i group]
+    (fn [i n]
       ^{:key i}
-      [react/view styles/pin-indicator-group-container
-       group])
-    (partition 3
-               (map-indexed
-                (fn [i n]
-                  ^{:key i}
-                  [pin-indicator (number? n) status])
-                (concat pin
-                        (repeat (- 6 (count pin))
-                                nil)))))])
+      [pin-indicator (number? n) status])
+    (concat pin (repeat (- group-size (count pin)) nil)))])
 
 (defn puk-indicators [puk status]
-  [react/view {:margin-top 28}
+  [react/view {:margin-top 28
+               :flex-direction :row
+               :justify-content :space-between}
    (map-indexed
     (fn [i puk-group]
       ^{:key i}
-      [pin-indicators puk-group status {:margin-top 8}])
-    (partition 6
+      [pin-indicators puk-group status 4 {:margin-top 8 :margin 12}])
+    (partition 4
                (concat puk
                        (repeat (- 12 (count puk))
                                nil))))])
@@ -113,7 +108,7 @@
 
        (if (= step :puk)
          [puk-indicators pin status]
-         [pin-indicators pin status nil])
+         [pin-indicators pin status 6 nil])
        [numpad step enabled? small-screen?]]]]))
 
 (def pin-retries 3)

@@ -120,8 +120,10 @@
 (defn- proceed-to-pin-confirmation [fx]
   (assoc-in fx [:db :hardwallet :pin :enter-step] :confirmation))
 
-(defn- proceed-to-pin-reset-confiramtion [fx]
-  (assoc-in fx [:db :hardwallet :pin :enter-step] :reset-confirmation))
+(defn- proceed-to-pin-reset-confirmation [fx]
+  (-> fx
+      (update-in [:db :hardwallet :pin] dissoc :reset-confirmation)
+      (assoc-in [:db :hardwallet :pin :enter-step] :reset-confirmation)))
 
 (defn- proceed-to-puk-confirmation [fx]
   (assoc-in fx [:db :hardwallet :pin :enter-step] :puk))
@@ -354,7 +356,7 @@
       (pin-enter-error :t/pin-mismatch)
 
       (= enter-step :reset)
-      (proceed-to-pin-reset-confiramtion)
+      (proceed-to-pin-reset-confirmation)
 
       (and (= enter-step :reset-confirmation)
            (= (get-in db [:hardwallet :pin :reset])
