@@ -13,10 +13,8 @@
               :members-joined #{"a" "c"}
               :name "name"
               :membership-update-events :events
-              :gaps-loaded? true
               :unviewed-messages-count 2
               :is-active true
-              :messages {}
               :pagination-info {}
               :chat-id "chat-id"
               :loaded-unviewed-messages-ids []

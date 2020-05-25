@@ -32,15 +32,15 @@
      [react/view online-dot-right]]]])
 
 (defn chat-icon-view
-  [contact group-chat name _online styles]
+  [contact group-chat name styles]
   [react/view (:container styles)
    (if-not group-chat
      [photos/photo (multiaccounts/displayed-photo contact) styles]
      [default-chat-icon name styles])])
 
 (defn chat-icon-view-toolbar
-  [contact group-chat name color online]
-  [chat-icon-view contact group-chat name online
+  [contact group-chat name color]
+  [chat-icon-view contact group-chat name
    {:container              styles/container-chat-toolbar
     :online-view-wrapper    styles/online-view-wrapper
     :online-view            styles/online-view
@@ -52,8 +52,8 @@
     :default-chat-icon-text (styles/default-chat-icon-text 36)}])
 
 (defn chat-icon-view-chat-list
-  [contact group-chat name color online]
-  [chat-icon-view contact group-chat name online
+  [contact group-chat name color]
+  [chat-icon-view contact group-chat name
    {:container              styles/container-chat-list
     :online-view-wrapper    styles/online-view-wrapper
     :online-view            styles/online-view
@@ -65,8 +65,8 @@
     :default-chat-icon-text (styles/default-chat-icon-text 40)}])
 
 (defn chat-icon-view-chat-sheet
-  [contact group-chat name color online]
-  [chat-icon-view contact group-chat name online
+  [contact group-chat name color]
+  [chat-icon-view contact group-chat name
    {:container              styles/container-chat-list
     :online-view-wrapper    styles/online-view-wrapper
     :online-view            styles/online-view

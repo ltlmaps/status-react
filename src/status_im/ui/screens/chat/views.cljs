@@ -51,45 +51,78 @@
      {:color colors/blue}]
     [react/i18n-text {:style style/add-contact-text :key :add-to-contacts}]]])
 
-(defn intro-header
-  [contact]
+(defn intro-header [name]
   [react/text {:style (assoc style/intro-header-description
                              :margin-bottom 32)}
    (str
     (i18n/label :t/empty-chat-description-one-to-one)
-    (multiaccounts/displayed-name contact))])
+    name)])
+
+(defn chat-intro [{:keys [chat-id
+                          chat-name
+                          group-chat
+                          contact-name
+                          public?
+                          color
+                          loading-messages?
+                          no-messages?]}]
+  [react/view (style/intro-header-container loading-messages? no-messages?)
+   ;; Icon section
+   [react/view {:style {:margin-top    42
+                        :margin-bottom 24}}
+    [chat-icon.screen/chat-intro-icon-view
+     chat-name chat-id
+     {:default-chat-icon      (style/intro-header-icon 120 color)
+      :default-chat-icon-text style/intro-header-icon-text
+      :size                   120}]]
+   ;; Chat title section
+   [react/text {:style (style/intro-header-chat-name)} (if group-chat chat-name contact-name)]
+   ;; Description section
+   (if group-chat
+     [chat.group/group-chat-description-container {:chat-id chat-id
+                                                   :loading-messages? loading-messages?
+                                                   :public? public?
+                                                   :no-messages? no-messages?}]
+     [react/text {:style (assoc style/intro-header-description
+                                :margin-bottom 32)}
+
+      (str
+       (i18n/label :t/empty-chat-description-one-to-one)
+       contact-name)])])
+
+(defview chat-intro-one-to-one [{:keys [chat-id] :as opts}]
+  (letsubs [{:keys [ens-name alias]} [:contacts/contact-name-by-identity chat-id]]
+    (chat-intro (assoc opts :contact-name (if (seq ens-name)
+                                            ens-name
+                                            alias)))))
 
 (defn chat-intro-header-container
-  [{:keys [group-chat name pending-invite-inviter-name color chat-id chat-name
+  [{:keys [group-chat
+           chat-name
+           might-have-join-time-messages?
+           name pending-invite-inviter-name color chat-id chat-name
            public? contact intro-status] :as chat}
    no-messages]
   (let [icon-text  (if public? chat-id name)
         intro-name (if public? chat-name (multiaccounts/displayed-name contact))]
-    (when (or pending-invite-inviter-name
-              (not= (get-in contact [:tribute-to-talk :snt-amount]) 0))
-      [react/touchable-without-feedback
-       {:style    {:flex        1
-                   :align-items :flex-start}
-        :on-press (fn [_]
-                    (re-frame/dispatch
-                     [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
-                    (react/dismiss-keyboard!))}
-       [react/view (style/intro-header-container intro-status no-messages)
-        ;; Icon section
-        [react/view {:style {:margin-top    42
-                             :margin-bottom 24}}
-         [chat-icon.screen/chat-intro-icon-view
-          icon-text chat-id
-          {:default-chat-icon      (style/intro-header-icon 120 color)
-           :default-chat-icon-text style/intro-header-icon-text
-           :size                   120}]]
-        ;; Chat title section
-        [react/text {:style (style/intro-header-chat-name)}
-         (if group-chat chat-name intro-name)]
-        ;; Description section
-        (if group-chat
-          [chat.group/group-chat-description-container chat]
-          [intro-header contact])]])))
+    [react/touchable-without-feedback
+     {:style    {:flex        1
+                 :align-items :flex-start}
+      :on-press (fn [_]
+                  (re-frame/dispatch
+                   [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
+                  (react/dismiss-keyboard!))}
+     (let [opts
+           {:chat-id chat-id
+            :group-chat group-chat
+            :chat-name chat-name
+            :public? public?
+            :color color
+            :loading-messages? might-have-join-time-messages?
+            :no-messages? no-messages}]
+       (if group-chat
+         [chat-intro opts]
+         [chat-intro-one-to-one opts]))]))
 
 (defonce messages-list-ref (atom nil))
 
@@ -111,13 +144,14 @@
 (defview messages-view
   [{:keys [group-chat chat-id pending-invite-inviter-name] :as chat}]
   (letsubs [messages           [:chats/current-chat-messages-stream]
+            no-messages?       [:chats/current-chat-no-messages?]
             current-public-key [:multiaccount/public-key]]
     [list/flat-list
      {:key-fn                       #(or (:message-id %) (:value %))
       :ref                          #(reset! messages-list-ref %)
       :header                       (when pending-invite-inviter-name
                                       [chat.group/group-chat-footer chat-id])
-      :footer                       [chat-intro-header-container chat (empty? messages)]
+      :footer                       [chat-intro-header-container chat no-messages?]
       :data                         messages
       :inverted                     true
       :render-fn                    (fn [{:keys [outgoing type] :as message} idx]

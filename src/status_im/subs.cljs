@@ -184,6 +184,10 @@
 
 (reg-root-key-sub :multiaccounts/loading :multiaccounts/loading)
 
+(reg-root-key-sub ::messages :messages)
+(reg-root-key-sub ::message-lists :message-lists)
+(reg-root-key-sub ::pagination-info :pagination-info)
+
 ;;GENERAL ==============================================================================================================
 
 (re-frame/reg-sub
@@ -613,71 +617,10 @@
  (fn [[contacts chats multiaccount]]
    (chat.db/active-chats contacts chats multiaccount)))
 
-;; TODO: this is no useful without tribute to talk
-#_(defn enrich-current-one-to-one-chat
-    [{:keys [contact] :as current-chat} my-public-key ttt-settings
-     chain-keyword prices currency]
-    (let [{:keys [tribute-to-talk]} contact
-          {:keys [disabled? snt-amount message]} tribute-to-talk
-          whitelisted-by? (whitelist/whitelisted-by? contact)
-          loading?        (and (not whitelisted-by?)
-                               (not tribute-to-talk))
-          show-input?     (or whitelisted-by?
-                              disabled?)
-          token           (case chain-keyword
-                            :mainnet :SNT
-                            :STT)
-          tribute-status  (if loading?
-                            :loading
-                            (tribute-to-talk.db/tribute-status contact))
-          tribute-label   (tribute-to-talk.db/status-label tribute-status snt-amount)]
-
-      (cond-> (assoc current-chat
-                     :tribute-to-talk/tribute-status tribute-status
-                     :tribute-to-talk/tribute-label tribute-label)
-
-        (#{:required :pending :paid} tribute-status)
-        (assoc :tribute-to-talk/snt-amount
-               (tribute-to-talk.db/from-wei snt-amount)
-               :tribute-to-talk/message
-               message
-               :tribute-to-talk/fiat-amount   (if snt-amount
-                                                (money/fiat-amount-value
-                                                 snt-amount
-                                                 token
-                                                 (-> currency :code keyword)
-                                                 prices)
-                                                "0")
-               :tribute-to-talk/fiat-currency (:code currency)
-               :tribute-to-talk/token         (str " " (name token)))
-
-        (tribute-to-talk.db/enabled? ttt-settings)
-        (assoc :tribute-to-talk/received? (tribute-to-talk.db/tribute-received?
-                                           contact))
-
-        (= tribute-status :required)
-        (assoc :tribute-to-talk/on-share-my-profile
-               #(re-frame/dispatch
-                 [:profile/share-profile-link my-public-key]))
-
-        show-input?
-        (assoc :show-input? true))))
-
-(defn enrich-current-chat
-  [{:keys [messages chat-id might-have-join-time-messages?] :as chat} ranges]
-  (assoc chat
-         :range
-         (get ranges chat-id)
-         :intro-status
-         (if might-have-join-time-messages?
-           :loading
-           (if (empty? messages)
-             :empty
-             :messages))))
-
+;; TODO: Fix me
 (re-frame/reg-sub
  :chats/current-raw-chat
- :<- [:chats/active-chats]
+ :<- [::chats]
  :<- [:chats/current-chat-id]
  (fn [[chats current-chat-id]]
    (get chats current-chat-id)))
@@ -697,11 +640,7 @@
  (fn [[{:keys [group-chat chat-id messages] :as current-chat}
        my-public-key ranges]]
    (when current-chat
-     (cond-> (enrich-current-chat current-chat ranges)
-       (empty? messages)
-       (assoc :universal-link
-              (links/generate-link :public-chat :external chat-id))
-
+     (cond-> current-chat
        (chat.models/public-chat? current-chat)
        (assoc :show-input? true)
 
@@ -721,16 +660,11 @@
             (chat.models/public-chat? current-chat)))))
 
 (re-frame/reg-sub
- :chats/current-chat-message
- :<- [:chats/current-chat]
- (fn [{:keys [messages]} [_ message-id]]
-   (get messages message-id)))
-
-(re-frame/reg-sub
  :chats/current-chat-messages
- :<- [:chats/current-chat]
- (fn [{:keys [messages]}]
-   (or messages {})))
+ :<- [::messages]
+ :<- [:chats/current-chat-id]
+ (fn [[messages chat-id]]
+   (get messages chat-id {})))
 
 (re-frame/reg-sub
  :chats/messages-gaps
@@ -738,6 +672,12 @@
  :<- [:chats/current-chat-id]
  (fn [[gaps chat-id]]
    (sort-by :from (vals (get gaps chat-id)))))
+
+(re-frame/reg-sub
+ :mailserver/ranges-by-chat-id
+ :<- [:mailserver/ranges]
+ (fn [ranges [_ chat-id]]
+   (get ranges chat-id)))
 
 (re-frame/reg-sub
  :chats/range
@@ -748,27 +688,23 @@
 
 (re-frame/reg-sub
  :chats/all-loaded?
- :<- [:chats/current-chat]
- (fn [chat]
-   (:all-loaded? chat)))
+ :<- [::pagination-info]
+ :<- [:chats/current-chat-id]
+ (fn [[pagination-info chat-id]]
+   (get-in pagination-info [chat-id :all-loaded?])))
 
 (re-frame/reg-sub
  :chats/public?
- :<- [:chats/current-chat]
+ :<- [:chats/current-raw-chat]
  (fn [chat]
    (:public? chat)))
 
 (re-frame/reg-sub
  :chats/message-list
- :<- [:chats/current-chat]
- (fn [chat]
-   (:message-list chat)))
-
-(re-frame/reg-sub
- :chats/messages
- :<- [:chats/current-chat]
- (fn [chat]
-   (:messages chat)))
+ :<- [::message-lists]
+ :<- [:chats/current-chat-id]
+ (fn [[message-lists chat-id]]
+   (get message-lists chat-id)))
 
 (defn hydrate-messages
   "Pull data from messages and add it to the sorted list"
@@ -780,9 +716,15 @@
         message-list))
 
 (re-frame/reg-sub
+ :chats/current-chat-no-messages?
+ :<- [:chats/current-chat-messages]
+ (fn [messages]
+   (empty? messages)))
+
+(re-frame/reg-sub
  :chats/current-chat-messages-stream
  :<- [:chats/message-list]
- :<- [:chats/messages]
+ :<- [:chats/current-chat-messages]
  :<- [:chats/messages-gaps]
  :<- [:chats/range]
  :<- [:chats/all-loaded?]
@@ -793,17 +735,6 @@
        (chat.db/add-datemarks)
        (hydrate-messages messages)
        (chat.db/add-gaps messages-gaps range all-loaded? public?))))
-
-(re-frame/reg-sub
- :chats/current-chat-intro-status
- :<- [:chats/current-chat]
- :<- [:chats/current-chat-messages]
- (fn [[{:keys [might-have-join-time-messages?]} messages]]
-   (if might-have-join-time-messages?
-     :loading
-     (if (empty? messages)
-       :empty
-       :messages))))
 
 (re-frame/reg-sub
  :chats/photo-path
@@ -873,9 +804,15 @@
    (filter-contacts selected-contacts active-contacts)))
 
 (re-frame/reg-sub
+ :group-chat/inviter-info
+ (fn []
+   {:pending-invite-inviter-name "test 1"
+    :inviter-name "test 2"}))
+
+(re-frame/reg-sub
  :group-chat/chat-joined?
  :<- [:multiaccount/public-key]
- :<- [:chats/active-chats]
+ :<- [::chats]
  (fn [[my-public-key chats] [_ chat-id]]
    (let [current-chat (get chats chat-id)]
      (and (chat.models/group-chat? current-chat)
@@ -1619,15 +1556,22 @@
            contact.db/enrich-contact))))
 
 (re-frame/reg-sub
+ :contacts/contact-by-identity
+ :<- [::contacts]
+ (fn [contacts [_ identity]]
+   (get contacts identity)))
+
+(re-frame/reg-sub
  :contacts/contact-name-by-identity
- :<- [:contacts/contacts]
- :<- [:multiaccount]
- (fn [[contacts current-multiaccount] [_ identity]]
+ (fn [[_ identity] _]
+   [(re-frame/subscribe [:contacts/contact-by-identity identity])
+    (re-frame/subscribe [:multiaccount])])
+ (fn [[db-contact current-multiaccount] [_ identity]]
    (let [me? (= (:public-key current-multiaccount) identity)]
      (if me?
        {:ens-name (:preferred-name current-multiaccount)
         :alias (gfycat/generate-gfy identity)}
-       (let [contact (or (contacts identity)
+       (let [contact (or db-contact
                          (contact.db/public-key->new-contact identity))]
          {:ens-name  (when (:ens-verified contact)
                        (:name contact))
