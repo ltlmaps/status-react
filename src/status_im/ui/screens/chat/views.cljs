@@ -2,7 +2,6 @@
   (:require [re-frame.core :as re-frame]
             [status-im.contact.db :as contact.db]
             [status-im.i18n :as i18n]
-            [status-im.multiaccounts.core :as multiaccounts]
             [status-im.ui.components.chat-icon.screen :as chat-icon.screen]
             [status-im.ui.components.colors :as colors]
             [status-im.ui.components.connectivity.view :as connectivity]
@@ -99,8 +98,8 @@
 (defn chat-intro-header-container
   [{:keys [group-chat
            might-have-join-time-messages?
-           name color chat-id chat-name
-           public? contact]}
+           color chat-id chat-name
+           public?]}
    no-messages]
   [react/touchable-without-feedback
    {:style    {:flex        1

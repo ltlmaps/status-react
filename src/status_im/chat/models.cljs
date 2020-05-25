@@ -4,7 +4,6 @@
             [status-im.transport.filters.core :as transport.filters]
             [status-im.contact.core :as contact.core]
             [status-im.waku.core :as waku]
-            [status-im.contact.db :as contact.db]
             [status-im.data-store.chats :as chats-store]
             [status-im.data-store.messages :as messages-store]
             [status-im.ethereum.json-rpc :as json-rpc]
