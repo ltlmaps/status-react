@@ -19,19 +19,11 @@
                   :type  :boolean}])
 
 (defn cool-preview []
-  (let [state                 (reagent/atom {:show-handle?       true
-                                             :backdrop-dismiss?  true
-                                             :disable-drag?      false
-                                             :back-button-cancel true})
-        visible               (reagent/atom false)
-        default-sheet-content (fn []
-                                [rn/view {:style {:height          100
-                                                  :justify-content :center
-                                                  :align-items     :center}}
-                                 [rn/touchable-opacity {:on-press #(reset! visible false)}
-                                  [quo/text {:color :link} "Close"]]
-                                 [rn/text-input {:default-value "Hello world"}]
-                                 [quo/text "Hello world!"]])]
+  (let [state   (reagent/atom {:show-handle?       true
+                               :backdrop-dismiss?  true
+                               :disable-drag?      false
+                               :back-button-cancel true})
+        visible (reagent/atom false)]
     (fn []
       [rn/view {:margin-bottom 50
                 :padding       16}
@@ -45,13 +37,25 @@
                             :border-radius      4
                             :background-color   (:interactive-01 @colors/theme)}}
            [quo/text {:color :secondary-inverse}
-            (str "Open sheet" @visible)]]]]
+            (str "Open sheet: " @visible)]]]]
+
         [quo/bottom-sheet (merge @state
                                  {:visible?  @visible
-                                  :on-cancel #(reset! visible false)
-                                  :content   default-sheet-content})]]])))
+                                  :on-cancel #(reset! visible false)})
+         [rn/view {:style {:height          400
+                           :justify-content :center
+                           :align-items     :center}}
+          [rn/text-input {:placeholder "kkk"}]
+          [rn/touchable-opacity {:on-press #(reset! visible false)}
+           [quo/text {:color :link} "Close"]]
+          [rn/text-input {:default-value "Hello world"}]
+          [quo/text "Hello world!"]]]]])))
 
 (defn preview []
   (fn []
-    [rn/view {:flex 1 :background-color :white}
-     [cool-preview]]))
+    [rn/view {:background-color (:ui-background @colors/theme)
+              :flex             1}
+     [rn/flat-list {:flex                      1
+                    :keyboardShouldPersistTaps :always
+                    :header                    [cool-preview]
+                    :key-fn                    str}]]))
