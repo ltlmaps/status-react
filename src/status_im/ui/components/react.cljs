@@ -195,6 +195,15 @@
         (.then images-fn)
         (.catch show-access-error))))
 
+(defn show-image-picker-camera
+  ([images-fn]
+   (show-image-picker-camera images-fn nil))
+  ([images-fn props]
+   (->  ^js image-picker
+        (.openCamera (clj->js props))
+        (.then images-fn)
+        (.catch show-access-error))))
+
 ;; Clipboard
 
 (def sharing

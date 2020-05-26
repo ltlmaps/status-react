@@ -41,4 +41,4 @@
     (when (and @camera-ref (:width @layout))
       (let [{:keys [width height]} @layout
             {:keys [x y]} (js->clj coord :keywordize-keys true)]
-        (reset! focus-object (clj->js {:x (/ x width) :y (/ y height)}))))))
+        (reset! focus-object (clj->js {:x (/ x width) :y (/ y height) :autoExposure true}))))))

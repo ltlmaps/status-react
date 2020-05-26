@@ -82,7 +82,7 @@
                        (assoc-in [:chats current-chat-id :metadata :responding-to-message]
                                  message)
                        (update-in [:chats current-chat-id :metadata]
-                                 dissoc :sending-image))}
+                                  dissoc :sending-image))}
               (chat-input-focus :input-ref))))
 
 (fx/defn cancel-message-reply

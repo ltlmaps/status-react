@@ -47,18 +47,17 @@
 
 (def cancel-reply-highlight
   {:align-items     :center
-   :justify-content :center
    :width           44
    :height          44})
 
 (def cancel-reply-icon
   {:background-color colors/gray
-   :width            21
-   :height           21
+   :width            20
+   :height           20
+   :margin-top       4
    :align-items      :center
    :justify-content  :center
-   :margin-bottom    8
-   :border-radius    12})
+   :border-radius    10})
 
 (def input-container
   {:flex-direction :row

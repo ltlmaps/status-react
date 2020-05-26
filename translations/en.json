@@ -1124,5 +1124,6 @@
     "dark": "Dark",
     "system": "System",
     "give-permissions-camera": "Give permission\nto access camera",
-    "photos": "Photos"
+    "photos": "Photos",
+    "image": "Image"
 }

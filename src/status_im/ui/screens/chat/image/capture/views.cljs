@@ -6,7 +6,6 @@
             [status-im.ui.components.icons.vector-icons :as icons]
             [status-im.ui.components.camera :as camera]
             [reagent.core :as reagent]
-            [status-im.utils.utils :as utils]
             [status-im.i18n :as i18n]
             [status-im.utils.platform :as platform]))
 
@@ -81,15 +80,7 @@
             (i18n/label :t/close)]]]]]])))
 
 (defn take-picture []
-  (re-frame/dispatch
-   [:request-permissions
-    {:permissions [:camera]
-     :on-allowed  #(re-frame/dispatch [:navigate-to :capture-image])
-     :on-denied   (fn []
-                    (utils/set-timeout
-                     #(utils/show-popup (i18n/label :t/error)
-                                        (i18n/label :t/camera-access-error))
-                     50))}]))
+  (react/show-image-picker-camera #(re-frame/dispatch [:chat.ui/image-captured (.-path %)]) {}))
 
 (defn camera-button []
   [react/touchable-without-feedback {:on-press take-picture :style {:flex 1}}
