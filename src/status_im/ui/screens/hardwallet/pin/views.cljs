@@ -1,6 +1,5 @@
 (ns status-im.ui.screens.hardwallet.pin.views
-  (:require-macros [status-im.utils.views :refer [defview letsubs]]
-                   [taoensso.timbre :as log])
+  (:require-macros [status-im.utils.views :refer [defview letsubs]])
   (:require [re-frame.core :as re-frame]
             [status-im.i18n :as i18n]
             [status-im.ui.components.colors :as colors]
@@ -49,8 +48,7 @@
    (map-indexed
     (fn [i n]
       ^{:key i}
-      [pin-indicator (
-                      number? n) status])
+      [pin-indicator (number? n) status])
     (concat pin (repeat (- group-size (count pin)) nil)))])
 
 (defn puk-indicators [puk status]

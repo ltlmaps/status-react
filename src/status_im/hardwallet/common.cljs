@@ -494,3 +494,17 @@
             {:db                    (assoc-in db [:hardwallet :pin :status] :verifying)
              :hardwallet/verify-pin {:pin     pin
                                      :pairing pairing}})))}))))
+(fx/defn do-something
+  {:events [::do-something]}
+  [cofx]
+  (log/debug "do something")
+  (hide-connection-sheet cofx))
+
+(fx/defn check-card-state
+  {:events [::check-card-state]}
+  [cofx]
+  (show-connection-sheet
+   cofx
+   {:on-card-connected :hardwallet/get-application-info
+    :on-card-read      ::do-something
+    :handler           (get-application-info nil :do-something)}))
