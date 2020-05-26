@@ -219,6 +219,7 @@
     [react/view
      {:style
       {:background-color colors/green-transparent-10
+       :margin-bottom 32
        :width            40
        :height           40
        :align-items      :center
@@ -227,7 +228,8 @@
      [vector-icons/icon
       :main-icons/check
       {:color colors/green}]]
-    [react/text (i18n/label :t/keycard-access-reset)]
+    [react/text {:style {:typography :header}}
+     (i18n/label :t/keycard-access-reset)]
     [react/text (i18n/label :t/keycard-can-use-with-new-passcode)]]
    [react/view
     {:style {:width 160
