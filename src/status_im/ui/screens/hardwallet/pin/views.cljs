@@ -49,7 +49,8 @@
    (map-indexed
     (fn [i n]
       ^{:key i}
-      [pin-indicator (number? n) status])
+      [pin-indicator (
+                      number? n) status])
     (concat pin (repeat (- group-size (count pin)) nil)))])
 
 (defn puk-indicators [puk status]
@@ -103,8 +104,17 @@
                    (i18n/label error-label)]]
           (when (and retry-counter (< retry-counter default-pin-retries-number))
             [react/view {:margin-top (if (= step :puk) 24 8)}
-             [react/text {:style {:text-align :center}}
-              (i18n/label :t/pin-retries-left {:number retry-counter})]]))]
+             (case retry-counter
+               2 [react/text {:style {:text-align :center
+                                      :color colors/gray}}
+                  (i18n/label :t/pin-two-attempts-left)]
+               1 [react/nested-text {:style {:text-align :center
+                                             :color colors/gray}}
+                  (i18n/label :t/pin-one-attempt-left-part-one)
+                  [{:color colors/black
+                    :font-weight "700"}
+                   (i18n/label :t/pin-one-attempt-left-part-two)]
+                  (i18n/label :t/pin-one-attempt-left-part-three)])]))]
 
        (if (= step :puk)
          [puk-indicators pin status]

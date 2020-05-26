@@ -227,8 +227,8 @@
      [vector-icons/icon
       :main-icons/check
       {:color colors/green}]]
-    [react/text "Keyacrd access is reset"]
-    [react/text "You can use this card with your new passcode"]]
+    [react/text (i18n/label :t/keycard-access-reset)]
+    [react/text (i18n/label :t/keycard-can-use-with-new-passcode)]]
    [react/view
     {:style {:width 160
              :margin-bottom 15}}
